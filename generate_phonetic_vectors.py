@@ -37,6 +37,11 @@ def main():
             if len(row) > 0: #skip any empty ones
                 line = row[0]
                 phones = row[1].split(" ")
+                print("phones")
+                print(phones)
+                i += 1
+                if i > 10:
+                    break
                 features = Counter(feature_bigrams(phones))
                 entries.append((line, features))
                 all_features.update(features.keys())
