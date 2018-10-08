@@ -27,35 +27,43 @@ def normalize(vec):
         return vec
 
 def main():
+    print("Program Start: {0}".format(datetime.now().time()))
+
     all_features = Counter()
     entries = []
 
     with open('transcribed_data.csv') as data:
         rdr = csv.reader(data)
         i = 0
+        num_entries = 0
         for row in rdr:
             if len(row) > 0: #skip any empty ones
-                line = row[0]
-                phones = row[1].split(" ")
-                print("phones")
-                print(phones)
+                if i % 10 == 0: #6.3M lines total, but memory can't handle all of that, so try ~600K
+                    line = row[0]
+                    phones = [p for p in row[1].split(" ") if p not in ["-","!","+","/","#",":", "name"]] #ignore special ARPAbet symbols
+                    if len(phones) < 2: #skip any with empty phones
+                        continue
+                    features = Counter(feature_bigrams(phones))
+                    entries.append((line, features))
+                    all_features.update(features.keys())
+                    num_entries += 1
+                    if num_entries % 10000 == 0:
+                        print("num_entries is {0}".format(num_entries))
                 i += 1
-                if i > 10:
-                    break
-                features = Counter(feature_bigrams(phones))
-                entries.append((line, features))
-                all_features.update(features.keys())
+                if i % 20000 == 0:
+                    print("i is {0}".format(i))
 
     print("Entries calculated at {0}".format(datetime.now().time()))
+    print("Num entries {0}".format(len(entries)))
 
     filtfeatures = sorted([f for f, count in all_features.items() \
             if count >= 2])
 
     print("Feature count:", len(filtfeatures))
-    print("Etarting PCA at {0}".format(datetime.now().time()))
+    print("Starting PCA at {0}".format(datetime.now().time()))
 
     arr = np.array([normalize([i.get(j, 0) for j in filtfeatures]) \
-            for line, i in entries])
+        for line, i in entries])
     pca = PCA(n_components=50, whiten=True) #could play with # of components
     transformed = pca.fit_transform(arr)
 
