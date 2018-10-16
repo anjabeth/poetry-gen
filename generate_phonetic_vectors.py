@@ -38,9 +38,9 @@ def main():
         num_entries = 0
         for row in rdr:
             if len(row) > 0: #skip any empty ones
-                if i % 10 == 0: #6.3M lines total, but memory can't handle all of that, so try ~600K
+                if i % 2 == 0: #6.3M lines total, but memory can't handle all of that, so try ~600K
                     line = row[0]
-                    phones = [p for p in row[1].split(" ") if p not in ["-","!","+","/","#",":", "name"]] #ignore special ARPAbet symbols
+                    phones = [p for p in row[1].split(" ") if p not in ["-","!","+","/","#",":", "name", "abbrev"]] #ignore special ARPAbet symbols
                     if len(phones) < 2: #skip any with empty phones
                         continue
                     features = Counter(feature_bigrams(phones))
@@ -69,12 +69,11 @@ def main():
 
     print("PCA finished at {0}".format(datetime.now().time()))
 
-    with open('vectors.csv', mode='w') as out_file:
-        out_writer = csv.writer(out_file, delimiter=',', quotechar='"')
+    with open('phonetic_vectors_every2.txt', mode='w') as out_file:
         for i in range(len(entries)):
             line = entries[i][0]
             nums = [num for num in transformed[i]]
-            out_writer.writerow([line.encode('utf-8'), nums])
+            out_file.write("{0} {1}\n".format(line, nums))
     print("Written to file: {0}".format(datetime.now().time()))
 
 if __name__ == '__main__':
