@@ -70,11 +70,11 @@ def build_annoy_indices(input_word, input_vector):
     phon = AnnoyIndex(100, metric="euclidean")
 
     print("Reading Data for Semantic Index: {0}".format(datetime.now().time()))
-    for i, row in enumerate(open("semantic_vectors.txt")):
+    for i, row in enumerate(open("semantic_vectors_averaged.txt")):
         spl = row.find("[")
         line = row[0:spl-1].lower()
         vec = row[spl+1:-2]
-        vals = np.array([float(val) for val in vec.split(", ")])
+        vals = np.array([float(val.strip("'")) for val in vec.split("' '")])
         if line in lookup:
             continue
         sem.add_item(i, vals)
