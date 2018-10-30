@@ -1,9 +1,4 @@
-""" Code adapted from https://github.com/aparrish/phonetic-similarity-vectors/blob/master/generate.py """
-
-#TO FIX: 
-# usage: python generate.py <cmudict-0.7b >cmudict-0.7b-embeddings
-# reads a CMUDict-formatted text file on standard input, prints embeddings
-# for each word on standard output.
+""" Code adapted from github.com/aparrish/phonetic-similarity-vectors/blob/master/generate.py """
 
 import sys
 import csv
@@ -37,8 +32,8 @@ def main():
         i = 0
         num_entries = 0
         for row in rdr:
-            if len(row) > 0: #skip any empty ones
-                if i % 2 == 0: #6.3M lines total, but memory can't handle all of that, so try ~600K
+            if len(row) > 0: #skip any empty rows
+                if i % 2 == 0: #~3.1M lines total, but that's too much for RAM, so only take ~1.5M
                     line = row[0]
                     phones = [p for p in row[1].split(" ") if p not in ["-","!","+","/","#",":", "name", "abbrev"]] #ignore special ARPAbet symbols
                     if len(phones) < 2: #skip any with empty phones
@@ -50,8 +45,6 @@ def main():
                     if num_entries % 10000 == 0:
                         print("num_entries is {0}".format(num_entries))
                 i += 1
-                if i % 20000 == 0:
-                    print("i is {0}".format(i))
 
     print("Entries calculated at {0}".format(datetime.now().time()))
     print("Num entries {0}".format(len(entries)))
@@ -64,7 +57,7 @@ def main():
 
     arr = np.array([normalize([i.get(j, 0) for j in filtfeatures]) \
         for line, i in entries])
-    pca = PCA(n_components=200, whiten=True) #could play with # of components
+    pca = PCA(n_components=200, whiten=True) #TODO: could play with # of components
     transformed = pca.fit_transform(arr)
 
     print("PCA finished at {0}".format(datetime.now().time()))
