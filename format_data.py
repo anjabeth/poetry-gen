@@ -45,7 +45,7 @@ def transcribe_lines(lines, transcribed_dict, cmu ):
 		pronounceable = True
 		for word in words:
 			word = word.lower() #cmudict is all lowercased
-			if word in PUNCTUATION: #ignore punctuation
+			if word in PUNCTUATION:
 				continue
 			pron = cmu[word]
 			if len(pron) == 0: #not in dict, throw out this line
@@ -54,7 +54,7 @@ def transcribe_lines(lines, transcribed_dict, cmu ):
 			else:
 				transcription.extend(pron[0]) #take the first pronunciation if there are multiple
 		if pronounceable:
-			#dict entries are orig line -> [words in line, transcribed phonemes]
+			#dict entries are orig line -> [transcribed phonemes], space-separated
 			transcribed_dict[line] = ' '.join(transcription)
 
 
@@ -77,7 +77,3 @@ def main():
 
 if __name__ == "__main__":
 	main()
-
-
-
-#interesting question: better to represent the phonetic as a bag-of-words or as just the concatenated representation of all the phonemes?
