@@ -27,17 +27,20 @@ def main():
     second_stanza = []
     poem = [first_stanza, second_stanza]
 
-    first_stanza_1 = sem_similar_lines[0[0]]
+    first_stanza_1 = lines[sem_similar_lines[1][0]] #skip the first one, since it will be the input word itself
     first_stanza.append(first_stanza_1)
-    phon_similar_lines_1 = nnlookup(phon, phon.get_item_vector([lookup[first_stanza_1]]))
+    print(first_stanza_1)
+    print(lookup[first_stanza_1])
+    print(phon.get_item_vector(lookup[first_stanza_1]))
+    phon_similar_lines_1 = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1]))
     for i in phon_similar_lines_1:
-        first_stanza.append(i[0])
+        first_stanza.append(lines[i[0]])
 
-    second_stanza_1 = sem_similar_lines[1[0]]
+    second_stanza_1 = lines[sem_similar_lines[2][0]]
     second_stanza.append(second_stanza_1)
-    phon_similar_lines_2 = nnlookup(phon, phon.get_item_vector([lookup[second_stanza_1]]))
+    phon_similar_lines_2 = nn_lookup(phon, phon.get_item_vector(lookup[second_stanza_1]))
     for i in phon_similar_lines_2:
-        second_stanza.append(i[0])
+        second_stanza.append(lines[i[0]])
 
     print("Done Generating Poem: {0}".format(datetime.now().time()))
 
@@ -79,6 +82,8 @@ def build_annoy_indices(input_word, input_vector):
         lookup[line] = i
         if i % 100000 == 0:
             print("......{0} vectors loaded.".format(i))
+        if i > 500000:
+            break
 
     last_index = i+1
     sem.add_item(last_index, input_vector) #add input vector so its neighbors can be calculated
@@ -104,6 +109,8 @@ def build_annoy_indices(input_word, input_vector):
                 phon.add_item(i, vals) #problem: skipping is is bad
             if i % 100000 == 0:
                 print("......{0} vectors loaded.".format(i))
+            if i > 500000:
+                break
     print("Building Phonetic Index: {0}".format(datetime.now().time()))
     phon.build(100)
     print("Built: {0}".format(datetime.now().time()))
