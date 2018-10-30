@@ -1,4 +1,4 @@
-""" Code adapted from https://github.com/aparrish/phonetic-similarity-vectors/blob/master/generate.py """
+""" Code adapted from github.com/aparrish/phonetic-similarity-vectors/blob/master/generate.py """
 
 import sys
 import csv
