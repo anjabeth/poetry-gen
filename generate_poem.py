@@ -12,7 +12,8 @@ from datetime import datetime
 import io
 
 lookup = dict()
-lines = []
+slines = dict()
+plines = dict()
 
 
 def main():
@@ -32,12 +33,11 @@ def main():
     while first_stanza_1_index > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
         i += 1
         first_stanza_1_index = sem_similar_lines[i][0]
-    first_stanza_1 = lines[first_stanza_1_index] 
+    first_stanza_1 = slines[first_stanza_1_index] 
     first_stanza.append(first_stanza_1)
-    # phon_similar_lines_1 = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1]))
     phon_similar_lines_1 = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1][1]))
     for j in phon_similar_lines_1:
-        if lines[j[0]] == first_stanza_1:
+        if plines[j[0]] == first_stanza_1:
             continue #skip the one that is the line itself
         first_stanza.append(lines[j[0]])
 
@@ -46,11 +46,11 @@ def main():
     while second_stanza_1_index > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
         i += 1
         second_stanza_1_index = sem_similar_lines[i][0]
-    second_stanza_1 = lines[second_stanza_1_index]
+    second_stanza_1 = slines[second_stanza_1_index]
     second_stanza.append(second_stanza_1)
     phon_similar_lines_2 = nn_lookup(phon, phon.get_item_vector(lookup[second_stanza_1][1]))
     for j in phon_similar_lines_2:
-        if lines[j[0]] == second_stanza_1:
+        if plines[j[0]] == second_stanza_1:
             continue #skip the one that is the line itself
         second_stanza.append(lines[j[0]])
 
@@ -90,7 +90,7 @@ def build_annoy_indices(input_word, input_vector):
         vals = np.array([float(val) for val in vec.split(", ")])
         if line not in lookup:
             sem.add_item(index, vals)
-            lines.append(line)
+            slines[index] = line
             lookup[line] = [index]
             index += 1
         if index % 100000 == 0:
@@ -99,7 +99,7 @@ def build_annoy_indices(input_word, input_vector):
     last_index = index+1
     sem.add_item(last_index, input_vector) #add input vector so its neighbors can be calculated
     lookup[input_word] = [last_index]
-    lines.append(input_word)
+    slines[input_word] = last_index
 
     print("Building Semantic Index: {0}".format(datetime.now().time()))
     sem.build(100)
@@ -119,6 +119,7 @@ def build_annoy_indices(input_word, input_vector):
             if stripped_line.lower() in lookup:
                 phon.add_item(pindex, vals)
                 lookup[stripped_line.lower()].append(pindex)
+                plines[pindex] = stripped_line.lower()
                 pindex += 1
             if pindex % 100000 == 0:
                 print("......{0} vectors loaded.".format(pindex))
