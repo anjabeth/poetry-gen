@@ -8,7 +8,8 @@ def main():
     lookup = dict()
 
     print("loading...")
-    for i, row in enumerate(open("phonetic_vectors_every2_d200.txt")):
+    index = 0
+    for row in open("phonetic_vectors_every2_d200.txt"):
         spl = row.find("' [")
         spl2 = row.rfind("' [")
         if spl != spl2: #skip this one if there are weird extra brackets
@@ -20,12 +21,13 @@ def main():
             vals = np.array([float(val) for val in vec.split(", ")])
             if stripped_line in lookup:
                 continue
-            lookup[stripped_line] = i
+            lookup[stripped_line] = index
             lines.append(stripped_line)
-            t.add_item(i, vals)
-        if i % 50000 == 0:
+            t.add_item(index, vals)
+            index += 1
+        if index % 50000 == 0:
             print(stripped_line.lower())
-            print("{0} vectors loaded".format(i))
+            print("{0} vectors loaded".format(index))
     t.build(200)
     print("done.")
 
@@ -34,7 +36,7 @@ def main():
     print("Num index items: {0}".format(t.get_n_items()))
 
     try:
-        vec = lookup["i think the very violets"]
+        vec = lookup["irresistible love"]
         print(vec)
         print(t.get_item_vector(vec))
         print(nn_lookup(t, t.get_item_vector(vec)))

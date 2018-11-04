@@ -22,25 +22,37 @@ def main():
 
     print("Generating Poem: {0}".format(datetime.now().time()))
 
-    sem_similar_lines = nn_lookup(sem, sem.get_item_vector(lookup[prompt_word]))
+    sem_similar_lines = nn_lookup(sem, sem.get_item_vector(lookup[prompt_word][0]))
     first_stanza = []
     second_stanza = []
     poem = [first_stanza, second_stanza]
 
-    first_stanza_1 = lines[sem_similar_lines[1][0]] #skip the first one, since it will be the input word itself
+    i = 1 #skip the first one, since it will be the input word itself
+    first_stanza_1_index = sem_similar_lines[i][0]
+    while first_stanza_1_index > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
+        i += 1
+        first_stanza_1_index = sem_similar_lines[i][0]
+    first_stanza_1 = lines[first_stanza_1_index] 
     first_stanza.append(first_stanza_1)
-    print(first_stanza_1)
-    print(lookup[first_stanza_1])
-    print(phon.get_item_vector(lookup[first_stanza_1]))
-    phon_similar_lines_1 = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1]))
-    for i in phon_similar_lines_1:
-        first_stanza.append(lines[i[0]])
+    # phon_similar_lines_1 = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1]))
+    phon_similar_lines_1 = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1][1]))
+    for j in phon_similar_lines_1:
+        if lines[j[0]] == first_stanza_1:
+            continue #skip the one that is the line itself
+        first_stanza.append(lines[j[0]])
 
-    second_stanza_1 = lines[sem_similar_lines[2][0]]
+    i += 1
+    second_stanza_1_index = sem_similar_lines[i][0]
+    while second_stanza_1_index > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
+        i += 1
+        second_stanza_1_index = sem_similar_lines[i][0]
+    second_stanza_1 = lines[second_stanza_1_index]
     second_stanza.append(second_stanza_1)
-    phon_similar_lines_2 = nn_lookup(phon, phon.get_item_vector(lookup[second_stanza_1]))
-    for i in phon_similar_lines_2:
-        second_stanza.append(lines[i[0]])
+    phon_similar_lines_2 = nn_lookup(phon, phon.get_item_vector(lookup[second_stanza_1][1]))
+    for j in phon_similar_lines_2:
+        if lines[j[0]] == second_stanza_1:
+            continue #skip the one that is the line itself
+        second_stanza.append(lines[j[0]])
 
     print("Done Generating Poem: {0}".format(datetime.now().time()))
 
@@ -69,51 +81,52 @@ def build_annoy_indices(input_word, input_vector):
     sem = AnnoyIndex(99, metric="euclidean")
     phon = AnnoyIndex(100, metric="euclidean")
 
+    index = 0
     print("Reading Data for Semantic Index: {0}".format(datetime.now().time()))
-    for i, row in enumerate(open("semantic_vectors_averaged.txt")):
+    for row in open("semantic_vectors.txt"):
         spl = row.find("[")
         line = row[0:spl-1].lower()
         vec = row[spl+1:-2]
-        vals = np.array([float(val.strip("'")) for val in vec.split("' '")])
-        if line in lookup:
-            continue
-        sem.add_item(i, vals)
-        lines.append(line)
-        lookup[line] = i
-        if i % 100000 == 0:
-            print("......{0} vectors loaded.".format(i))
-        if i > 500000:
-            break
+        vals = np.array([float(val) for val in vec.split(", ")])
+        if line not in lookup:
+            sem.add_item(index, vals)
+            lines.append(line)
+            lookup[line] = [index]
+            index += 1
+        if index % 100000 == 0:
+            print("......{0} vectors loaded.".format(index))
 
-    last_index = i+1
+    last_index = index+1
     sem.add_item(last_index, input_vector) #add input vector so its neighbors can be calculated
-    lookup[input_word] = last_index
+    lookup[input_word] = [last_index]
     lines.append(input_word)
 
     print("Building Semantic Index: {0}".format(datetime.now().time()))
     sem.build(100)
     print("Built: {0}".format(datetime.now().time()))
+    print("Num items in semantic index: {0}".format(sem.get_n_items()))
 
     print("Reading Data for Phonetic Index: {0}".format(datetime.now().time()))
-    for i, row in enumerate(open("phonetic_vectors_every2_d100.txt")):
+    pindex = 0
+    for row in open("phonetic_vectors_every2_d100.txt"):
         spl = row.find("' [")
         spl2 = row.rfind("' [")
-        if spl != spl2: #skip this one if there are weird extra brackets
-            continue
-        if spl > 0: #make sure there are brackets at all
+        if spl > 0 and spl == spl2: #make sure brackets are correct
             line = row[0:spl+1]
             stripped_line = line[2:-1] #skip the b''
             vec = row[spl+3:-2]
             vals = np.array([float(val) for val in vec.split(", ")])
             if stripped_line.lower() in lookup:
-                phon.add_item(i, vals) #problem: skipping is is bad
-            if i % 100000 == 0:
-                print("......{0} vectors loaded.".format(i))
-            if i > 500000:
-                break
+                phon.add_item(pindex, vals)
+                lookup[stripped_line.lower()].append(pindex)
+                pindex += 1
+            if pindex % 100000 == 0:
+                print("......{0} vectors loaded.".format(pindex))
+
     print("Building Phonetic Index: {0}".format(datetime.now().time()))
     phon.build(100)
     print("Built: {0}".format(datetime.now().time()))
+    print("Num items in phonetic index: {0}".format(phon.get_n_items()))
 
     print("Done Building Annoy Indices: {0}".format(datetime.now().time()))
     return sem, phon

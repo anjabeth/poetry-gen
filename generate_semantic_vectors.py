@@ -36,19 +36,11 @@ with open('phonetic_vectors_every2.txt') as phonetic_vectors:
             if v is None:
                 has_all_words = False
             all_vecs.append(v)
-<<<<<<< HEAD
         if has_all_words and num_words > 0:
             num_entries += 1
             if num_entries % 10000 == 0:
                 print("num_entries is {0}".format(num_entries))
             line_vec = sum(all_vecs) / num_words
-=======
-        if has_all_words and len(all_vecs) > 1:
-            num_entries += 1
-            if num_entries % 10000 == 0:
-                print("num_entries is {0}".format(num_entries))
-            line_vec = sum(all_vecs).tolist()
->>>>>>> f60924cb00b7b07f76adbb0fbc52f3e1fc7c2eab
             lines_and_vecs[stripped_line] = line_vec
 
         i += 1
