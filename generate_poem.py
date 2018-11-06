@@ -24,6 +24,7 @@ def main():
     print("Generating Poem: {0}".format(datetime.now().time()))
 
     sem_similar_lines = nn_lookup(sem, sem.get_item_vector(lookup[prompt_word][0]))
+    print("semantically similar lines are: {0}".format([slines[i[0]] for i in sem_similar_lines]))
     first_stanza = []
     second_stanza = []
     poem = [first_stanza, second_stanza]
@@ -33,13 +34,15 @@ def main():
     while first_stanza_1_index > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
         i += 1
         first_stanza_1_index = sem_similar_lines[i][0]
-    first_stanza_1 = slines[first_stanza_1_index] 
+    first_stanza_1 = slines[first_stanza_1_index]
+    print("first line is {0}".format(first_stanza_1))
     first_stanza.append(first_stanza_1)
     phon_similar_lines_1 = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1][1]))
+    print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_1]))
     for j in phon_similar_lines_1:
         if plines[j[0]] == first_stanza_1:
             continue #skip the one that is the line itself
-        first_stanza.append(lines[j[0]])
+        first_stanza.append(plines[j[0]])
 
     i += 1
     second_stanza_1_index = sem_similar_lines[i][0]
@@ -47,12 +50,14 @@ def main():
         i += 1
         second_stanza_1_index = sem_similar_lines[i][0]
     second_stanza_1 = slines[second_stanza_1_index]
+    print("first line is {0}".format(second_stanza_1))
     second_stanza.append(second_stanza_1)
     phon_similar_lines_2 = nn_lookup(phon, phon.get_item_vector(lookup[second_stanza_1][1]))
+    print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_2]))
     for j in phon_similar_lines_2:
         if plines[j[0]] == second_stanza_1:
             continue #skip the one that is the line itself
-        second_stanza.append(lines[j[0]])
+        second_stanza.append(plines[j[0]])
 
     print("Done Generating Poem: {0}".format(datetime.now().time()))
 
@@ -99,7 +104,7 @@ def build_annoy_indices(input_word, input_vector):
     last_index = index+1
     sem.add_item(last_index, input_vector) #add input vector so its neighbors can be calculated
     lookup[input_word] = [last_index]
-    slines[input_word] = last_index
+    slines[last_index] = input_word
 
     print("Building Semantic Index: {0}".format(datetime.now().time()))
     sem.build(100)
@@ -133,7 +138,7 @@ def build_annoy_indices(input_word, input_vector):
     return sem, phon
 
 
-def nn_lookup(an, vec, n=10):
+def nn_lookup(an, vec, n=20):
     res = an.get_nns_by_vector(vec, n)
     batches = []
     current_batch = []

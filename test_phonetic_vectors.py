@@ -3,13 +3,13 @@ from annoy import AnnoyIndex
 import numpy as np
 
 def main():
-    t = AnnoyIndex(200, metric='euclidean')
+    t = AnnoyIndex(100, metric='euclidean')
     lines = list()
     lookup = dict()
 
     print("loading...")
     index = 0
-    for row in open("phonetic_vectors_every2_d200.txt"):
+    for row in open("phonetic_vectors_every2_d100.txt"):
         spl = row.find("' [")
         spl2 = row.rfind("' [")
         if spl != spl2: #skip this one if there are weird extra brackets
@@ -28,7 +28,7 @@ def main():
         if index % 50000 == 0:
             print(stripped_line.lower())
             print("{0} vectors loaded".format(index))
-    t.build(200)
+    t.build(100)
     print("done.")
 
     print("Num dict items: {0}".format(len(lookup)))
