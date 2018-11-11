@@ -22,13 +22,16 @@ def main():
     sem, phon = build_annoy_indices(prompt_word, prompt_vec)
 
     print("Generating Poem: {0}".format(datetime.now().time()))
+    print("***")
 
-    sem_similar_lines = nn_lookup(sem, sem.get_item_vector(lookup[prompt_word][0]))
+    sem_similar_lines, sem_distances = nn_lookup(sem, sem.get_item_vector(lookup[prompt_word][0]))
     print("semantically similar lines are: {0}".format([slines[i[0]] for i in sem_similar_lines]))
+    print("distances are: {0}".format(sem_distances))
     first_stanza = []
     second_stanza = []
     poem = [first_stanza, second_stanza]
 
+    print("***")
     i = 1 #skip the first one, since it will be the input word itself
     first_stanza_1_index = sem_similar_lines[i][0]
     while first_stanza_1_index > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
@@ -37,13 +40,15 @@ def main():
     first_stanza_1 = slines[first_stanza_1_index]
     print("first line is {0}".format(first_stanza_1))
     first_stanza.append(first_stanza_1)
-    phon_similar_lines_1 = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1][1]))
+    phon_similar_lines_1, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1][1]))
     print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_1]))
+    print("distances are: {0}".format(phon_distances))
     for j in phon_similar_lines_1:
         if plines[j[0]] == first_stanza_1:
             continue #skip the one that is the line itself
         first_stanza.append(plines[j[0]])
 
+    print("***")
     i += 1
     second_stanza_1_index = sem_similar_lines[i][0]
     while second_stanza_1_index > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
@@ -52,12 +57,14 @@ def main():
     second_stanza_1 = slines[second_stanza_1_index]
     print("first line is {0}".format(second_stanza_1))
     second_stanza.append(second_stanza_1)
-    phon_similar_lines_2 = nn_lookup(phon, phon.get_item_vector(lookup[second_stanza_1][1]))
+    phon_similar_lines_2, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[second_stanza_1][1]))
     print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_2]))
+    print("distances are: {0}".format(phon_distances))
     for j in phon_similar_lines_2:
         if plines[j[0]] == second_stanza_1:
             continue #skip the one that is the line itself
         second_stanza.append(plines[j[0]])
+    print("***")
 
     print("Done Generating Poem: {0}".format(datetime.now().time()))
 
@@ -139,7 +146,7 @@ def build_annoy_indices(input_word, input_vector):
 
 
 def nn_lookup(an, vec, n=20):
-    res = an.get_nns_by_vector(vec, n)
+    res, distances = an.get_nns_by_vector(vec, n, include_distances=True)
     batches = []
     current_batch = []
     last_vec = None
@@ -156,7 +163,7 @@ def nn_lookup(an, vec, n=20):
     output = []
     for batch in batches:
         output.append(batch)
-    return output
+    return output, distances
 
 if __name__ == '__main__':
     main()

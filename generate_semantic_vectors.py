@@ -17,7 +17,7 @@ with io.open("glove.6B.100d.txt", 'r', encoding='utf-8') as glove:
 lines_and_vecs = dict()
 
 print("Processing Phonetic Vectors: {0}".format(datetime.now().time()))
-with open('phonetic_vectors_every2.txt') as phonetic_vectors:
+with open('phonetic_vectors_every2_d100.txt') as phonetic_vectors:
     i = 0
     num_entries = 0
     for row in phonetic_vectors:
@@ -40,15 +40,18 @@ with open('phonetic_vectors_every2.txt') as phonetic_vectors:
             num_entries += 1
             if num_entries % 10000 == 0:
                 print("num_entries is {0}".format(num_entries))
-            line_vec = sum(all_vecs) / num_words
+            #line_vec = sum(all_vecs) / num_words avg
+            line_vec = sum(all_vecs)
             lines_and_vecs[stripped_line] = line_vec
-
         i += 1
         if i % 10000 == 0:
             print("i is {0}".format(i))
+
 print("Done Processing Phonetic Vectors: {0}".format(datetime.now().time()))
+
 print("Writing to File: {0}".format(datetime.now().time()))
-with open('semantic_vectors_averaged.txt', mode='w') as out_file:
+with open('semantic_vectors_summed.txt', mode='w') as out_file:
     for line, vec in lines_and_vecs.items():
-        out_file.write("{0} {1}\n".format(line, vec))
+        vals = ", ".join([str(val) for val in vec])
+        out_file.write("{0} @@@ {1}\n".format(line, vals))
 print("Written to file: {0}".format(datetime.now().time()))

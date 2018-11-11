@@ -1,29 +1,39 @@
 import sys
 from annoy import AnnoyIndex
 import numpy as np
+from datetime import datetime
+import io
 
 def main():
-    t = AnnoyIndex(100, metric='euclidean')
-    lines = list()
+    t = AnnoyIndex(99, metric='euclidean')
+    lines = dict()
     lookup = dict()
+
+    prompt_word = input("Get the nearest semantic neighbors of: ")
+    prompt_vec = find_glove_vector(prompt_word)
 
     print("loading...")
     index = 0
-    for row in open("phonetic_vectors_every2_d100_reformatted.txt"):
+    for row in open("semantic_vectors_avgd.txt"):
         spl = row.find("@@@")
-        line = row[0:spl-1]
-        stripped_line = line[2:-1].lower() #skip the b''
+        line = row[0:spl-1].lower()
         vec = row[spl+3:-1]
         vals = np.array([float(val) for val in vec.split(", ")])
-        if stripped_line in lookup:
+        if line in lookup:
             continue
-        lookup[stripped_line] = index
-        lines.append(stripped_line)
         t.add_item(index, vals)
+        lines[index] = line
+        lookup[line] = [index]
         index += 1
         if index % 50000 == 0:
-            print(stripped_line.lower())
+            print(line)
             print("{0} vectors loaded".format(index))
+
+    last_index = index+1
+    t.add_item(last_index, prompt_vec) #add input vector so its neighbors can be calculated
+    lookup[prompt_word] = [last_index]
+    lines[last_index] = prompt_word
+
     t.build(100)
     print("done.")
 
@@ -32,13 +42,22 @@ def main():
     print("Num index items: {0}".format(t.get_n_items()))
 
     try:
-        vec = lookup["irresistible love"]
-        print(vec)
-        print(t.get_item_vector(vec))
-        print(nn_lookup(t, t.get_item_vector(vec)))
-        print([lines[i[0]] for i in nn_lookup(t, t.get_item_vector(vec))])
+        vec = prompt_vec
+        print(nn_lookup(t, vec))
+        print([lines[i[0]] for i in nn_lookup(t, vec)])
     except KeyError:
         print("not found")
+
+def find_glove_vector(input_word):
+    print("Searching Glove Vectors: {0}".format(datetime.now().time()))
+    with io.open("glove.6B.100d.txt", 'r', encoding='utf-8') as glove:
+        for line in glove:
+            entries = line.split(" ")
+            word = entries[0]
+            if word == input_word.lower():
+                vector = np.array([float(n) for n in entries[1:-1]])
+                return vector
+    print("Sorry, word not found.")
 
 def nn_lookup(an, vec, n=20):
     res = an.get_nns_by_vector(vec, n)

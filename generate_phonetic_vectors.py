@@ -62,11 +62,11 @@ def main():
 
     print("PCA finished at {0}".format(datetime.now().time()))
 
-    with open('phonetic_vectors_every2_d200.txt', mode='w') as out_file:
+    with open('phonetic_vectors_every2_d200_reformatted.txt', mode='w') as out_file:
         for i in range(len(entries)):
             line = entries[i][0]
-            nums = [num for num in transformed[i]]
-            out_file.write("{0} {1}\n".format(line, nums))
+            nums = ", ".join([str(val) for val in transformed[i]])
+            out_file.write("{0} @@@ {1}\n".format(line, nums))
     print("Written to file: {0}".format(datetime.now().time()))
 
 if __name__ == '__main__':
