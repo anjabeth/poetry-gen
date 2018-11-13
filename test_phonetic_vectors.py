@@ -3,13 +3,13 @@ from annoy import AnnoyIndex
 import numpy as np
 
 def main():
-    t = AnnoyIndex(100, metric='euclidean')
+    t = AnnoyIndex(200, metric='euclidean')
     lines = list()
     lookup = dict()
 
     print("loading...")
     index = 0
-    for row in open("phonetic_vectors_every2_d100_reformatted.txt"):
+    for row in open("phonetic_vectors_every2_d200_reformatted.txt"):
         spl = row.find("@@@")
         line = row[0:spl-1]
         stripped_line = line[2:-1].lower() #skip the b''

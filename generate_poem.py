@@ -43,8 +43,9 @@ def main():
     phon_similar_lines_1, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1][1]))
     print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_1]))
     print("distances are: {0}".format(phon_distances))
-    for j in phon_similar_lines_1:
-        if plines[j[0]] == first_stanza_1:
+    for j in range(4, len(phon_similar_lines_1)):
+        k = phon_similar_lines_1[j]
+        if plines[k[0]] == first_stanza_1:
             continue #skip the one that is the line itself
         first_stanza.append(plines[j[0]])
 
@@ -60,8 +61,9 @@ def main():
     phon_similar_lines_2, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[second_stanza_1][1]))
     print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_2]))
     print("distances are: {0}".format(phon_distances))
-    for j in phon_similar_lines_2:
-        if plines[j[0]] == second_stanza_1:
+    for j in range(4, len(phon_similar_lines_2)):
+        k = phon_similar_lines_2[j]
+        if plines[k[0]] == second_stanza_1:
             continue #skip the one that is the line itself
         second_stanza.append(plines[j[0]])
     print("***")
@@ -95,10 +97,10 @@ def build_annoy_indices(input_word, input_vector):
 
     index = 0
     print("Reading Data for Semantic Index: {0}".format(datetime.now().time()))
-    for row in open("semantic_vectors.txt"):
-        spl = row.find("[")
+    for row in open("semantic_vectors_weighted82.txt"):
+        spl = row.find("@@@")
         line = row[0:spl-1].lower()
-        vec = row[spl+1:-2]
+        vec = row[spl+3:-1]
         vals = np.array([float(val) for val in vec.split(", ")])
         if line not in lookup:
             sem.add_item(index, vals)
@@ -120,21 +122,19 @@ def build_annoy_indices(input_word, input_vector):
 
     print("Reading Data for Phonetic Index: {0}".format(datetime.now().time()))
     pindex = 0
-    for row in open("phonetic_vectors_every2_d100.txt"):
-        spl = row.find("' [")
-        spl2 = row.rfind("' [")
-        if spl > 0 and spl == spl2: #make sure brackets are correct
-            line = row[0:spl+1]
-            stripped_line = line[2:-1] #skip the b''
-            vec = row[spl+3:-2]
-            vals = np.array([float(val) for val in vec.split(", ")])
-            if stripped_line.lower() in lookup:
-                phon.add_item(pindex, vals)
-                lookup[stripped_line.lower()].append(pindex)
-                plines[pindex] = stripped_line.lower()
-                pindex += 1
-            if pindex % 100000 == 0:
-                print("......{0} vectors loaded.".format(pindex))
+    for row in open("phonetic_vectors_every2_d100_reformatted.txt"):
+        spl = row.find("@@@")
+        line = row[0:spl-1]
+        stripped_line = line[2:-1].lower() #skip the b''
+        vec = row[spl+3:-1]
+        vals = np.array([float(val) for val in vec.split(", ")])
+        if stripped_line in lookup:
+            phon.add_item(pindex, vals)
+            lookup[stripped_line].append(pindex)
+            plines[pindex] = stripped_line
+            pindex += 1
+        if pindex % 100000 == 0:
+            print("......{0} vectors loaded.".format(pindex))
 
     print("Building Phonetic Index: {0}".format(datetime.now().time()))
     phon.build(100)
