@@ -14,7 +14,7 @@ def main():
 
     print("loading...")
     index = 0
-    for row in open("semantic_vectors_weighted82.txt"):
+    for row in open("semantic_vectors_weighted91.txt"):
         spl = row.find("@@@")
         line = row[0:spl-1].lower()
         vec = row[spl+3:-1]

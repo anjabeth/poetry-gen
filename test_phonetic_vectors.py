@@ -32,7 +32,7 @@ def main():
     print("Num index items: {0}".format(t.get_n_items()))
 
     try:
-        vec = lookup["irresistible love"]
+        vec = lookup["skating on thin ice"]
         print(vec)
         print(t.get_item_vector(vec))
         print(nn_lookup(t, t.get_item_vector(vec)))

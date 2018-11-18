@@ -43,11 +43,11 @@ def main():
     phon_similar_lines_1, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1][1]))
     print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_1]))
     print("distances are: {0}".format(phon_distances))
-    for j in range(4, len(phon_similar_lines_1)):
+    for j in range(5, len(phon_similar_lines_1)):
         k = phon_similar_lines_1[j]
         if plines[k[0]] == first_stanza_1:
             continue #skip the one that is the line itself
-        first_stanza.append(plines[j[0]])
+        first_stanza.append(plines[k[0]])
 
     print("***")
     i += 1
@@ -61,11 +61,11 @@ def main():
     phon_similar_lines_2, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[second_stanza_1][1]))
     print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_2]))
     print("distances are: {0}".format(phon_distances))
-    for j in range(4, len(phon_similar_lines_2)):
+    for j in range(5, len(phon_similar_lines_2)):
         k = phon_similar_lines_2[j]
         if plines[k[0]] == second_stanza_1:
             continue #skip the one that is the line itself
-        second_stanza.append(plines[j[0]])
+        second_stanza.append(plines[k[0]])
     print("***")
 
     print("Done Generating Poem: {0}".format(datetime.now().time()))

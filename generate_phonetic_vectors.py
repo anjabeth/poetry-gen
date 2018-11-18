@@ -57,12 +57,12 @@ def main():
 
     arr = np.array([normalize([i.get(j, 0) for j in filtfeatures]) \
         for line, i in entries])
-    pca = PCA(n_components=200, whiten=True) #TODO: could play with # of components
+    pca = PCA(n_components=50, whiten=True) #TODO: could play with # of components
     transformed = pca.fit_transform(arr)
 
     print("PCA finished at {0}".format(datetime.now().time()))
 
-    with open('phonetic_vectors_every2_d200_reformatted.txt', mode='w') as out_file:
+    with open('phonetic_vectors_every2_d50_reformatted.txt', mode='w') as out_file:
         for i in range(len(entries)):
             line = entries[i][0]
             nums = ", ".join([str(val) for val in transformed[i]])
