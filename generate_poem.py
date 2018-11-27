@@ -55,7 +55,7 @@ def create_poem(sem, phon, prompt_word):
     print("Generating Poem: {0}".format(datetime.now().time()))
 
     sem_similar_lines, sem_distances = nn_lookup(sem, sem.get_item_vector(lookup[prompt_word][0]))
-    # print("semantically similar lines are: {0}".format([slines[i[0]] for i in sem_similar_lines]))
+    print("semantically similar lines are: {0}".format([slines[i[0]] for i in sem_similar_lines]))
     # print("distances are: {0}".format(sem_distances))
     sem_idx = 1
     first_stanza, new_idx = create_stanza(sem_similar_lines, sem_idx, phon)
@@ -99,7 +99,7 @@ def build_annoy_indices(input_words, input_vectors):
 
     index = 0
     print("Reading Data for Semantic Index: {0}".format(datetime.now().time()))
-    for row in open("semantic_vectors_weighted82.txt"):
+    for row in open("semantic_vectors_weighted91.txt"):
         spl = row.find("@@@")
         line = row[0:spl-1].lower()
         vec = row[spl+3:-1]
@@ -111,8 +111,6 @@ def build_annoy_indices(input_words, input_vectors):
             index += 1
         if index % 100000 == 0:
             print("......{0} vectors loaded.".format(index))
-        if index > 50000:
-            break
 
     last_index = index+1
     for i in range(len(input_words)):
@@ -122,7 +120,7 @@ def build_annoy_indices(input_words, input_vectors):
         last_index += 1
 
     print("Building Semantic Index: {0}".format(datetime.now().time()))
-    sem.build(100)
+    sem.build(50)
     print("Built: {0}".format(datetime.now().time()))
     print("Num items in semantic index: {0}".format(sem.get_n_items()))
 
@@ -141,11 +139,9 @@ def build_annoy_indices(input_words, input_vectors):
             pindex += 1
         if pindex % 100000 == 0:
             print("......{0} vectors loaded.".format(pindex))
-        if pindex > 50000:
-            break
 
     print("Building Phonetic Index: {0}".format(datetime.now().time()))
-    phon.build(100)
+    phon.build(50)
     print("Built: {0}".format(datetime.now().time()))
     print("Num items in phonetic index: {0}".format(phon.get_n_items()))
 
