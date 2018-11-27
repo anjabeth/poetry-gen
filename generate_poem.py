@@ -15,58 +15,53 @@ lookup = dict()
 slines = dict()
 plines = dict()
 
-
 def main():
-    prompt_word = input("Choose a word to base your poem on: ")
-    prompt_vec = find_glove_vector(prompt_word)
-    sem, phon = build_annoy_indices(prompt_word, prompt_vec)
+    num_poems = int(input("How many poems would you like to generate?"))
+    prompt_words = []
+    prompt_vecs = []
+    for i in range(num_poems):
+        prompt_words[i] = input("Choose a word to base poem {0} on: ".format(i+1)).lower()
+    prompt_vecs = find_glove_vectors(prompt_words)
 
+    sem, phon = build_annoy_indices(prompt_words, prompt_vecs)
+
+    for i in range(num_poems):
+        create_poem(prompt_words[i])
+
+    print("All poems generated at: {0}".format(datetime.now().time()))
+
+
+def create_stanza(sem_lines, idx, phon):
+    stanza = []
+    stanza_line1_idx = sem_similar_lines[idx][0]
+    while stanza_line1_idx > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
+        idx += 1
+        stanza_line1_idx = sem_similar_lines[idx][0]
+    stanza_line1 = slines[stanza_line1_idx]
+    # print("first line is {0}".format(first_stanza_1))
+    stanza.append(stanza_line1)
+    phon_similar_lines, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[stanza_line1][1]))
+    # print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_1]))
+    # print("distances are: {0}".format(phon_distances))
+    for j in range(5, len(phon_similar_lines)): #5 skips the closest (often too similar) neighbors, but is a pretty rough / hacky soln
+        k = phon_similar_lines[j]
+        if plines[k[0]] == stanza_line1:
+            continue #skip the one that is the line itself
+        stanza.append(plines[k[0]])
+    return stanza, idx #return idx so we know where to start the second stanza
+
+
+def create_poem(sem, phon, prompt_word):
     print("Generating Poem: {0}".format(datetime.now().time()))
-    print("***")
 
     sem_similar_lines, sem_distances = nn_lookup(sem, sem.get_item_vector(lookup[prompt_word][0]))
-    print("semantically similar lines are: {0}".format([slines[i[0]] for i in sem_similar_lines]))
-    print("distances are: {0}".format(sem_distances))
-    first_stanza = []
-    second_stanza = []
+    # print("semantically similar lines are: {0}".format([slines[i[0]] for i in sem_similar_lines]))
+    # print("distances are: {0}".format(sem_distances))
+    sem_idx = 1
+    first_stanza, new_idx = create_stanza(sem_lines, idx, phon)
+    second_stanza, throwaway = create_stanza(sem_lines, new_idx, phon)
+
     poem = [first_stanza, second_stanza]
-
-    print("***")
-    i = 1 #skip the first one, since it will be the input word itself
-    first_stanza_1_index = sem_similar_lines[i][0]
-    while first_stanza_1_index > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
-        i += 1
-        first_stanza_1_index = sem_similar_lines[i][0]
-    first_stanza_1 = slines[first_stanza_1_index]
-    print("first line is {0}".format(first_stanza_1))
-    first_stanza.append(first_stanza_1)
-    phon_similar_lines_1, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[first_stanza_1][1]))
-    print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_1]))
-    print("distances are: {0}".format(phon_distances))
-    for j in range(5, len(phon_similar_lines_1)):
-        k = phon_similar_lines_1[j]
-        if plines[k[0]] == first_stanza_1:
-            continue #skip the one that is the line itself
-        first_stanza.append(plines[k[0]])
-
-    print("***")
-    i += 1
-    second_stanza_1_index = sem_similar_lines[i][0]
-    while second_stanza_1_index > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
-        i += 1
-        second_stanza_1_index = sem_similar_lines[i][0]
-    second_stanza_1 = slines[second_stanza_1_index]
-    print("first line is {0}".format(second_stanza_1))
-    second_stanza.append(second_stanza_1)
-    phon_similar_lines_2, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[second_stanza_1][1]))
-    print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_2]))
-    print("distances are: {0}".format(phon_distances))
-    for j in range(5, len(phon_similar_lines_2)):
-        k = phon_similar_lines_2[j]
-        if plines[k[0]] == second_stanza_1:
-            continue #skip the one that is the line itself
-        second_stanza.append(plines[k[0]])
-    print("***")
 
     print("Done Generating Poem: {0}".format(datetime.now().time()))
 
@@ -75,22 +70,25 @@ def main():
             print(line)
         print("\n")
 
-    print("Done! : {0}".format(datetime.now().time()))
 
-
-def find_glove_vector(input_word):
+def find_glove_vectors(input_words):
     print("Searching Glove Vectors: {0}".format(datetime.now().time()))
+    matching_vectors = [None] * len(input_words)
     with io.open("glove.6B.100d.txt", 'r', encoding='utf-8') as glove:
         for line in glove:
             entries = line.split(" ")
             word = entries[0]
-            if word == input_word.lower():
+            if word in input_words:
+                idx = input_words.index(word)
                 vector = np.array([float(n) for n in entries[1:-1]])
-                return vector
-    print("Sorry, word not found.")
+                matching_vectors[idx] = vectors
+    if all(matching_vectors):
+        return matching_vectors
+    else:    
+        print("Sorry, one of your prompt words could not be found.")
 
 
-def build_annoy_indices(input_word, input_vector):
+def build_annoy_indices(input_words, input_vectors):
     print("Building Annoy Indices: {0}".format(datetime.now().time()))
     sem = AnnoyIndex(99, metric="euclidean")
     phon = AnnoyIndex(100, metric="euclidean")
@@ -111,9 +109,11 @@ def build_annoy_indices(input_word, input_vector):
             print("......{0} vectors loaded.".format(index))
 
     last_index = index+1
-    sem.add_item(last_index, input_vector) #add input vector so its neighbors can be calculated
-    lookup[input_word] = [last_index]
-    slines[last_index] = input_word
+    for i in range(len(input_words)):
+        sem.add_item(last_index, input_vectors[i]) #add input vector so its neighbors can be calculated
+        lookup[input_words[i]] = [last_index]
+        slines[last_index] = input_words[i]
+        last_index += 1
 
     print("Building Semantic Index: {0}".format(datetime.now().time()))
     sem.build(100)
