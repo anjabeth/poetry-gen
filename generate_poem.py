@@ -16,27 +16,27 @@ slines = dict()
 plines = dict()
 
 def main():
-    num_poems = int(input("How many poems would you like to generate?"))
+    num_poems = int(input("How many poems would you like to generate? "))
     prompt_words = []
     prompt_vecs = []
     for i in range(num_poems):
-        prompt_words[i] = input("Choose a word to base poem {0} on: ".format(i+1)).lower()
+        prompt_words.append(input("Choose a word to base poem {0} on: ".format(i+1)).lower())
     prompt_vecs = find_glove_vectors(prompt_words)
 
     sem, phon = build_annoy_indices(prompt_words, prompt_vecs)
 
     for i in range(num_poems):
-        create_poem(prompt_words[i])
+        create_poem(sem, phon, prompt_words[i])
 
     print("All poems generated at: {0}".format(datetime.now().time()))
 
 
 def create_stanza(sem_lines, idx, phon):
     stanza = []
-    stanza_line1_idx = sem_similar_lines[idx][0]
+    stanza_line1_idx = sem_lines[idx][0]
     while stanza_line1_idx > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
         idx += 1
-        stanza_line1_idx = sem_similar_lines[idx][0]
+        stanza_line1_idx = sem_lines[idx][0]
     stanza_line1 = slines[stanza_line1_idx]
     # print("first line is {0}".format(first_stanza_1))
     stanza.append(stanza_line1)
@@ -58,8 +58,9 @@ def create_poem(sem, phon, prompt_word):
     # print("semantically similar lines are: {0}".format([slines[i[0]] for i in sem_similar_lines]))
     # print("distances are: {0}".format(sem_distances))
     sem_idx = 1
-    first_stanza, new_idx = create_stanza(sem_lines, idx, phon)
-    second_stanza, throwaway = create_stanza(sem_lines, new_idx, phon)
+    first_stanza, new_idx = create_stanza(sem_similar_lines, sem_idx, phon)
+    new_idx += 1
+    second_stanza, throwaway = create_stanza(sem_similar_lines, new_idx, phon)
 
     poem = [first_stanza, second_stanza]
 
@@ -74,6 +75,7 @@ def create_poem(sem, phon, prompt_word):
 def find_glove_vectors(input_words):
     print("Searching Glove Vectors: {0}".format(datetime.now().time()))
     matching_vectors = [None] * len(input_words)
+    found = [0] * len(input_words)
     with io.open("glove.6B.100d.txt", 'r', encoding='utf-8') as glove:
         for line in glove:
             entries = line.split(" ")
@@ -81,11 +83,13 @@ def find_glove_vectors(input_words):
             if word in input_words:
                 idx = input_words.index(word)
                 vector = np.array([float(n) for n in entries[1:-1]])
-                matching_vectors[idx] = vectors
-    if all(matching_vectors):
+                matching_vectors[idx] = vector
+                found[idx] = 1
+    if all(found):
         return matching_vectors
     else:    
         print("Sorry, one of your prompt words could not be found.")
+        return
 
 
 def build_annoy_indices(input_words, input_vectors):
@@ -107,6 +111,8 @@ def build_annoy_indices(input_words, input_vectors):
             index += 1
         if index % 100000 == 0:
             print("......{0} vectors loaded.".format(index))
+        if index > 50000:
+            break
 
     last_index = index+1
     for i in range(len(input_words)):
@@ -135,6 +141,8 @@ def build_annoy_indices(input_words, input_vectors):
             pindex += 1
         if pindex % 100000 == 0:
             print("......{0} vectors loaded.".format(pindex))
+        if pindex > 50000:
+            break
 
     print("Building Phonetic Index: {0}".format(datetime.now().time()))
     phon.build(100)
