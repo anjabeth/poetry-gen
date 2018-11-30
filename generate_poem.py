@@ -44,34 +44,40 @@ def create_stanza(sem_lines, idx, phon):
     phon_similar_lines, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[stanza_line1][1]))
     # print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_1]))
     # print("distances are: {0}".format(phon_distances))
-    index = 1
-    orig_distance = phon_distances[index] #distance to first phonetic neighbor not itself
-    while orig_distance == 0:
-        index += 1
-        orig_distance = phon_distances[index]
-    print(phon_distances)
-    print("***")
-    print("Original distance is {0}".format(orig_distance))
-    sorting = []
-    for j in range(1, len(phon_similar_lines)): #5 skips the closest (often too similar) neighbors, but is a pretty rough / hacky soln
+    # index = 1
+    # orig_distance = phon_distances[index] #distance to first phonetic neighbor not itself
+    # while orig_distance == 0:
+    #     index += 1
+    #     orig_distance = phon_distances[index]
+    first_neighbor_distance_ratio = phon_distances[2] / phon_distances[1]
+    print("First neighbor distance ratio is {0}").format(first_neighbor_distance_ratio)
+    for j in range(1, len(phon_similar_lines)): 
         k = phon_similar_lines[j]
-        print("Distance for line {0} is {1}".format(plines[k[0]], phon_distances[j]))
         perc = phon_distances[j] / orig_distance
-        print("Percentage of original distance is {0}".format(perc))
-        if phon_distances[j] < 1.1 * orig_distance or phon_distances[j] > 1.4 * orig_distance:
+
+        if phon_distances[j] < first_neighbor_distance_ratio + 0.03 or phon_distances[j] > first_neighbor_distance_ratio + 0.18:
             continue
-        # if plines[k[0]] == stanza_line1:
-        #     continue #skip the one that is the line itself
-        stanza.append(plines[k[0]])
+        #reliminate if contains same word as first line
+        contains = False
         line_words = plines[k[0]].split(" ")
-        contains = 0
         for word in line_words:
             if word in line1_words:
-                sorting.append(1)
-                contains = 1
-        if not contains:
-            sorting.append(contains)
-    print("***")
+                contains = True
+        if contains:
+            continue
+
+        stanza.append(plines[k[0]])
+
+        # #rerank based on whether contains same words
+        # line_words = plines[k[0]].split(" ")
+        # contains = 0
+        # for word in line_words:
+        #     if word in line1_words:
+        #         sorting.append(1)
+        #         contains = 1
+        # if not contains:
+        #     sorting.append(contains)
+
     return stanza, idx #return idx so we know where to start the second stanza
 
 
@@ -144,7 +150,7 @@ def build_annoy_indices(input_words, input_vectors):
         last_index += 1
 
     print("Building Semantic Index: {0}".format(datetime.now().time()))
-    sem.build(100)
+    sem.build(150)
     print("Built: {0}".format(datetime.now().time()))
     print("Num items in semantic index: {0}".format(sem.get_n_items()))
 
@@ -165,7 +171,7 @@ def build_annoy_indices(input_words, input_vectors):
             print("......{0} vectors loaded.".format(pindex))
 
     print("Building Phonetic Index: {0}".format(datetime.now().time()))
-    phon.build(100)
+    phon.build(150)
     print("Built: {0}".format(datetime.now().time()))
     print("Num items in phonetic index: {0}".format(phon.get_n_items()))
 
@@ -173,7 +179,7 @@ def build_annoy_indices(input_words, input_vectors):
     return sem, phon
 
 
-def nn_lookup(an, vec, n=30):
+def nn_lookup(an, vec, n=60):
     res, distances = an.get_nns_by_vector(vec, n, include_distances=True)
     batches = []
     current_batch = []
