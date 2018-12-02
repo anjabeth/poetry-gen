@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-""" Read in Gutenberg Poetry Corpus data and Kaggle Song Lyrics data, and write each line out as phonetically transcribed by the CMU Pronouncing Dictionary"""
+""" Read in Gutenberg Poetry Corpus data and Kaggle Song Lyrics data, and write each line out
+as phonetically transcribed by the CMU Pronouncing Dictionary"""
 import ndjson
 import cmudict
 import re
@@ -9,6 +10,7 @@ from datetime import datetime
 PUNCTUATION = [".",",","!","?",";"]
 
 def load_and_transcribe_poetry(transcribed_dict, cmu):
+	"""Load and transcribe the lines from the Gutenberg Poetry Corpus"""
 	lines_dict = dict()
 
 	with open('gutenberg_poetry.ndjson') as gberg_poetry:
@@ -23,6 +25,7 @@ def load_and_transcribe_poetry(transcribed_dict, cmu):
 	transcribe_lines(lines_dict, transcribed_dict, cmu)
 
 def load_and_transcribe_lyrics(transcribed_dict, cmu):
+	"""Load and transcribe the lyrics from the Kaggle lyrics dataset"""
 	lines_dict = dict()
 	with open('songdata.csv') as lyrics:
 		rdr = csv.reader(lyrics)
@@ -39,7 +42,8 @@ def load_and_transcribe_lyrics(transcribed_dict, cmu):
 
 
 def transcribe_lines(lines, transcribed_dict, cmu ):
-	"""Take in a dict of line -> list of words in that line. Transcribe them if possible, and add original lines and transcribed lines as K/V pairs in transcribed_dict"""
+	"""Take in a dictionary of line -> list of words in that line. Transcribe the words
+	if possible, and add original lines and transcribed lines as K/V pairs in transcribed_dict"""
 	for line, words in lines.items():
 		transcription = []
 		pronounceable = True

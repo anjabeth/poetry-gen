@@ -1,4 +1,5 @@
-""" Code from https://github.com/aparrish/phonetic-similarity-vectors/blob/master/featurephone.py, used under MIT license """
+""" Mpas CMU dictionary phonemes to features and calculates bigrams of features.
+Code from https://github.com/aparrish/phonetic-similarity-vectors/blob/master/featurephone.py, used under MIT license """
 
 
 from itertools import product

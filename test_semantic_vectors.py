@@ -1,3 +1,5 @@
+"""Build only the semantic vector index and search it for a given vector - for dev purposes"""
+
 import sys
 from annoy import AnnoyIndex
 import numpy as np
@@ -49,6 +51,7 @@ def main():
         print("not found")
 
 def find_glove_vector(input_word):
+    """Find the GloVe vector for a particular prompt word"""
     print("Searching Glove Vectors: {0}".format(datetime.now().time()))
     with io.open("glove.6B.100d.txt", 'r', encoding='utf-8') as glove:
         for line in glove:
@@ -60,6 +63,7 @@ def find_glove_vector(input_word):
     print("Sorry, word not found.")
 
 def nn_lookup(an, vec, n=20):
+    """ Look up n nearest neighbors of given vec from Annoy index an"""
     res = an.get_nns_by_vector(vec, n)
     batches = []
     current_batch = []

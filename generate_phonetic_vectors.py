@@ -1,4 +1,5 @@
-""" Code adapted from github.com/aparrish/phonetic-similarity-vectors/blob/master/generate.py """
+""" Generate vectors that represent the phonetic content of lines based on their phonological features. 
+Code adapted from github.com/aparrish/phonetic-similarity-vectors/blob/master/generate.py """
 
 import sys
 import csv

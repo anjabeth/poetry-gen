@@ -1,3 +1,5 @@
+"""Build only the phonetic vector index and search it for a given vector - for dev purposes"""
+
 import sys
 from annoy import AnnoyIndex
 import numpy as np
@@ -41,6 +43,7 @@ def main():
         print("not found")
 
 def nn_lookup(an, vec, n=20):
+    """ Look up n nearest neighbors of given vec from Annoy index an"""
     res = an.get_nns_by_vector(vec, n)
     batches = []
     current_batch = []

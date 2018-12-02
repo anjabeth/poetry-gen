@@ -10,6 +10,7 @@ from annoy import AnnoyIndex
 import numpy as np
 from datetime import datetime
 import io
+import nltk
 
 lookup = dict()
 slines = dict()
@@ -20,7 +21,7 @@ def main():
     prompt_words = []
     prompt_vecs = []
     for i in range(num_poems):
-        prompt_words.append(input("Choose a word to base poem {0} on: ".format(i+1)).lower())
+        prompt_words.append(input("Choose a word or phrase to base poem {0} on: ".format(i+1)).lower())
     prompt_vecs = find_glove_vectors(prompt_words)
 
     sem, phon = build_annoy_indices(prompt_words, prompt_vecs)
@@ -31,7 +32,7 @@ def main():
     print("All poems generated at: {0}".format(datetime.now().time()))
 
 
-def create_stanza(sem_lines, idx, phon):
+def create_stanza(sem_lines, idx, phon, unique_words=False):
     stanza = []
     stanza_line1_idx = sem_lines[idx][0]
     while stanza_line1_idx > phon.get_n_items(): #not sure why phon has fewer items, but this gets around it
@@ -39,44 +40,29 @@ def create_stanza(sem_lines, idx, phon):
         stanza_line1_idx = sem_lines[idx][0]
     stanza_line1 = slines[stanza_line1_idx]
     line1_words = stanza_line1.split(" ")
-    # print("first line is {0}".format(first_stanza_1))
     stanza.append(stanza_line1)
     phon_similar_lines, phon_distances = nn_lookup(phon, phon.get_item_vector(lookup[stanza_line1][1]))
-    # print("phonetically similar lines are: {0}".format([plines[i[0]] for i in phon_similar_lines_1]))
-    # print("distances are: {0}".format(phon_distances))
-    # index = 1
-    # orig_distance = phon_distances[index] #distance to first phonetic neighbor not itself
-    # while orig_distance == 0:
-    #     index += 1
-    #     orig_distance = phon_distances[index]
-    first_neighbor_distance_ratio = phon_distances[2] / phon_distances[1]
-    print("First neighbor distance ratio is {0}").format(first_neighbor_distance_ratio)
+    index = 1
+    orig_distance = phon_distances[index] #distance to first phonetic neighbor not itself
+    while orig_distance == 0:
+        index += 1
+        orig_distance = phon_distances[index]
     for j in range(1, len(phon_similar_lines)): 
         k = phon_similar_lines[j]
         perc = phon_distances[j] / orig_distance
-
-        if phon_distances[j] < first_neighbor_distance_ratio + 0.03 or phon_distances[j] > first_neighbor_distance_ratio + 0.18:
+        if perc < 1.1 or perc > 1.4:
             continue
-        #reliminate if contains same word as first line
-        contains = False
-        line_words = plines[k[0]].split(" ")
-        for word in line_words:
-            if word in line1_words:
-                contains = True
-        if contains:
-            continue
+        if unique_words:
+            #eliminate if contains same word as first line (approximate, since using naive space split to define words)
+            contains = False
+            line_words = plines[k[0]].split(" ")
+            for word in line_words:
+                if word in line1_words:
+                    contains = True
+            if contains:
+                continue
 
         stanza.append(plines[k[0]])
-
-        # #rerank based on whether contains same words
-        # line_words = plines[k[0]].split(" ")
-        # contains = 0
-        # for word in line_words:
-        #     if word in line1_words:
-        #         sorting.append(1)
-        #         contains = 1
-        # if not contains:
-        #     sorting.append(contains)
 
     return stanza, idx #return idx so we know where to start the second stanza
 
@@ -104,22 +90,32 @@ def create_poem(sem, phon, prompt_word):
 
 def find_glove_vectors(input_words):
     print("Searching Glove Vectors: {0}".format(datetime.now().time()))
-    matching_vectors = [None] * len(input_words)
-    found = [0] * len(input_words)
-    with io.open("glove.6B.100d.txt", 'r', encoding='utf-8') as glove:
-        for line in glove:
-            entries = line.split(" ")
-            word = entries[0]
-            if word in input_words:
-                idx = input_words.index(word)
-                vector = np.array([float(n) for n in entries[1:-1]])
-                matching_vectors[idx] = vector
-                found[idx] = 1
-    if all(found):
-        return matching_vectors
-    else:    
-        print("Sorry, one of your prompt words could not be found.")
-        return
+    all_vectors = []
+    for w_or_p in input_words:
+        words = nltk.word_tokenize(w_or_p)
+        num_words = len(words)
+        matching_vectors = [None] * len(words)
+        found = [0] * len(words)
+        with io.open("glove.6B.100d.txt", 'r', encoding='utf-8') as glove:
+            for line in glove:
+                entries = line.split(" ")
+                word = entries[0]
+                if word in words:
+                    idx = words.index(word)
+                    vector = np.array([float(n) for n in entries[1:-1]])
+                    matching_vectors[idx] = vector
+                    found[idx] = 1
+        if all(found):
+            avgd_vec = sum(matching_vectors) / num_words
+            summed_vec = sum(matching_vectors)
+            total_vec = 0.9 * avgd_vec + 0.1 * summed_vec
+            all_vectors.append(total_vec)
+        else:
+            not_found_index = found.index(0)
+            print(words)
+            print("Sorry, one of your prompt words {0} could not be found.".format(words[not_found_index]))
+            return
+    return all_vectors
 
 
 def build_annoy_indices(input_words, input_vectors):
@@ -179,7 +175,7 @@ def build_annoy_indices(input_words, input_vectors):
     return sem, phon
 
 
-def nn_lookup(an, vec, n=60):
+def nn_lookup(an, vec, n=30):
     res, distances = an.get_nns_by_vector(vec, n, include_distances=True)
     batches = []
     current_batch = []
