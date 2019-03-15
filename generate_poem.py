@@ -1,10 +1,3 @@
-#read in both semantic and phonetic vectors
-#create annoy index for each type
-#create dict of line id -> line - line ids should be same across both annoy indices
-#hmm, what to do about the ones that are different across semantic/phonetic? there are some that had a phonetic transc
-#figure out what distance metric I want to use
-#play with annoy parameters (50 and 100) to see how big/good I can make them - does it matter if they're different sizes?
-#maybe use pickle to save the indices (minus the prompt) so that they don't have to be recreated every time?
 from collections import Counter 
 from annoy import AnnoyIndex
 import numpy as np
